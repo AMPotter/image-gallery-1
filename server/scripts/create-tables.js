@@ -14,7 +14,7 @@ client
         album_id INTEGER NOT NULL REFERENCES albums(id),
         title VARCHAR(256) NOT NULL,
         description VARCHAR(1024) NOT NULL,
-        url VARCHAR(1024) NOT NULL
+        url VARCHAR(99999) NOT NULL
     );
 `
   )

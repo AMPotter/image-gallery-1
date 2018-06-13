@@ -12,7 +12,9 @@ const client = new Client(databaseUrl);
 client.connect();
 
 app.get('/api/images', (req, res) => {
-  client.query(`
+  client
+    .query(
+      `
         select id,
             album_id as "albumId",
             title,
@@ -20,29 +22,36 @@ app.get('/api/images', (req, res) => {
             url
         from images
         order by name;
-    `).then(result => {
-    res.send(result.rows);
-  });
+    `
+    )
+    .then(result => {
+      res.send(result.rows);
+    });
 });
 
 app.post('/api/images', (req, res) => {
   const body = req.body;
 
-  client.query(`
+  client
+    .query(
+      `
         insert into images (album_id, title, description, url)
         values ($1, $2, $3, $4)
         returning *, album_id as "albumId";
     `,
-  [body.albumId, body.title, body.description, body.url]
-  ).then(result => {
-    res.send(result.rows[0]);
-  });
+      [body.albumId, body.title, body.description, body.url]
+    )
+    .then(result => {
+      res.send(result.rows[0]);
+    });
 });
 
 app.put('/api/images/:id', (req, res) => {
   const body = req.body;
 
-  client.query(`
+  client
+    .query(
+      `
         update images
         set
             album_id = $1
@@ -52,63 +61,73 @@ app.put('/api/images/:id', (req, res) => {
         where id = $5
         returning *, album_id as "albumId";
     `,
-  [body.albumId, body.title, body.description, body.url, req.params.id]
-  ).then(result => {
-    res.send(result.rows[0]);
-  });
+      [body.albumId, body.title, body.description, body.url, req.params.id]
+    )
+    .then(result => {
+      res.send(result.rows[0]);
+    });
 });
 
 app.delete('/api/images/:id', (req, res) => {
-  client.query(`
+  client
+    .query(
+      `
         delete from images where id=$1;
     `,
-  [req.params.id]
-  ).then(() => {
-    res.send({ removed: true });
-  });
+      [req.params.id]
+    )
+    .then(() => {
+      res.send({ removed: true });
+    });
 });
 
 app.get('/api/albums', (req, res) => {
-  client.query(`
+  client
+    .query(
+      `
         select * from albums;
-    `)
+    `
+    )
     .then(result => {
       res.send(result.rows);
     });
 });
 
 app.get('/api/albums/:id', (req, res) => {
-  const albumPromise = client.query(`
+  const albumPromise = client.query(
+    `
         select id, title, description
         from albums a
         where a.id = $1;
     `,
-  [req.params.id]);
+    [req.params.id]
+  );
 
-  const imagesPromise = client.query(`
+  const imagesPromise = client.query(
+    `
         select id, title, description, url
         from images
-        where quadrant_id = $1; 
+        where album_id = $1; 
     `,
-  [req.params.id]);
+    [req.params.id]
+  );
 
-  Promise.all([albumPromise, imagesPromise])
-    .then(results => {
-      const albumResult = results[0];
-      const imagesresult = results[1];
+  Promise.all([albumPromise, imagesPromise]).then(results => {
+    const albumResult = results[0];
+    const imagesResult = results[1];
 
-      if(albumResult.rows.length === 0) {
-        res.sendStatus(404);
-        return;
-      }
+    if(albumResult.rows.length === 0) {
+      res.sendStatus(404);
+      return;
+    }
 
-      const album = albumResult.rows[0];
-      const images = imagesresult.rows;
+    const album = albumResult.rows[0];
+    const images = imagesResult.rows;
 
-      album.images = images;
+    album.images = images;
 
-      res.send(album);
-    });
+    res.send(album);
+  });
 });
 
 app.listen(3000, () => console.log('server running...'));
