@@ -1,6 +1,10 @@
 const DATABASE_URL = 'postgres://localhost:5432/sickpics';
 const pg = require('pg');
+const types = pg.types;
 const Client = pg.Client;
+
+types.setTypeParser(20, parseFloat);
+types.setTypeParser(1700, parseFloat);
 
 const client = new Client(DATABASE_URL);
 client

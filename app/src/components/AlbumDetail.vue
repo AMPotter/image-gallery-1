@@ -50,6 +50,6 @@ export default {
 
 <style scoped>
 pre {
-    text-align: left;
+	text-align: left;
 }
 </style>

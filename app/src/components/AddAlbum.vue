@@ -1,15 +1,27 @@
 <template>
     <div>
-        <placeholder></placeholder>
+        <AlbumForm
+            label="Add"
+            :on-edit="onAdd"
+        />
     </div>
 </template>
 
 <script>
-export default {
+import AlbumForm from './AlbumForm';
 
+export default {
+  props: ['onAdd'],
+  components: {
+    AlbumForm
+  }
 };
 </script>
 
-<style>
-
+<style scoped>
+ul.list {
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+}
 </style>

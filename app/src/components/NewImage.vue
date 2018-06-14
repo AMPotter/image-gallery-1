@@ -2,7 +2,8 @@
     <section>
         <ImageForm
             label="Add"
-            :on-edit="onAdd"/>
+            :on-edit="onAdd"
+        />
     </section>
 </template>
 

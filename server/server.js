@@ -2,6 +2,8 @@ const express = require('express');
 const app = express();
 
 const cors = require('cors');
+const morgan = require('morgan');
+app.use(morgan('dev'));
 app.use(cors());
 app.use(express.json());
 
@@ -11,7 +13,7 @@ const databaseUrl = 'postgres://localhost:5432/sickpics';
 const client = new Client(databaseUrl);
 client.connect();
 
-app.get('/api/images', (req, res) => {
+app.get('/api/images', (req, res, next) => {
   client
     .query(
       `
@@ -26,10 +28,11 @@ app.get('/api/images', (req, res) => {
     )
     .then(result => {
       res.send(result.rows);
-    });
+    })
+    .catch(next);
 });
 
-app.post('/api/images', (req, res) => {
+app.post('/api/images', (req, res, next) => {
   const body = req.body;
 
   client
@@ -43,10 +46,11 @@ app.post('/api/images', (req, res) => {
     )
     .then(result => {
       res.send(result.rows[0]);
-    });
+    })
+    .catch(next);
 });
 
-app.put('/api/images/:id', (req, res) => {
+app.put('/api/images/:id', (req, res, next) => {
   const body = req.body;
 
   client
@@ -65,10 +69,11 @@ app.put('/api/images/:id', (req, res) => {
     )
     .then(result => {
       res.send(result.rows[0]);
-    });
+    })
+    .catch(next);
 });
 
-app.delete('/api/images/:id', (req, res) => {
+app.delete('/api/images/:id', (req, res, next) => {
   client
     .query(
       `
@@ -78,22 +83,31 @@ app.delete('/api/images/:id', (req, res) => {
     )
     .then(() => {
       res.send({ removed: true });
-    });
+    })
+    .catch(next);
 });
 
-app.get('/api/albums', (req, res) => {
+app.get('/api/albums', (req, res, next) => {
   client
     .query(
       `
-        select * from albums;
+        select
+          a.id, a.title, a.description,
+          count(i.id) as "imageCount"
+        from albums a
+        left join images i
+        on a.id = i.album_id
+        group by a.id
+        order by a.title;
     `
     )
     .then(result => {
       res.send(result.rows);
-    });
+    })
+    .catch(next);
 });
 
-app.get('/api/albums/:id', (req, res) => {
+app.get('/api/albums/:id', (req, res, next) => {
   const albumPromise = client.query(
     `
         select id, title, description
@@ -112,22 +126,51 @@ app.get('/api/albums/:id', (req, res) => {
     [req.params.id]
   );
 
-  Promise.all([albumPromise, imagesPromise]).then(results => {
-    const albumResult = results[0];
-    const imagesResult = results[1];
+  Promise.all([albumPromise, imagesPromise])
+    .then(results => {
+      const albumResult = results[0];
+      const imagesResult = results[1];
 
-    if(albumResult.rows.length === 0) {
-      res.sendStatus(404);
-      return;
-    }
+      if(albumResult.rows.length === 0) {
+        res.sendStatus(404);
+        return;
+      }
 
-    const album = albumResult.rows[0];
-    const images = imagesResult.rows;
+      const album = albumResult.rows[0];
+      const images = imagesResult.rows;
 
-    album.images = images;
+      album.images = images;
 
-    res.send(album);
-  });
+      res.send(album);
+    })
+    .catch(next);
+});
+
+app.post('/api/albums', (req, res, next) => {
+  const body = req.body;
+
+  client
+    .query(
+      `
+    insert into albums (title, description)
+    values ($1, $2)
+    returning *;
+  `,
+      [body.title, body.description]
+    )
+    .then(result => {
+      res.send(result.rows[0]);
+    })
+    .catch(next);
+});
+
+// eslint-disable-next-line
+app.use((err, req, res, next) => {
+  console.log('***SERVER ERROR***\n', err);
+  let message = 'internal server error';
+  if(err.message) message = err.message;
+  else if(typeof err === 'string') message = err;
+  res.status(500).send({ message });
 });
 
 app.listen(3000, () => console.log('server running...'));
