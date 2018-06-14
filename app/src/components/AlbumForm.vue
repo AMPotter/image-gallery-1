@@ -49,6 +49,7 @@ export default {
   },
   data() {
     return {
+      error: null,
       edit: this.album ? Object.assign({}, this.album) : initAlbum()
     };
   },
@@ -57,6 +58,9 @@ export default {
       return this.onEdit(this.edit)
         .then(() => {
           this.edit = initAlbum();
+        })
+        .catch(err => {
+          this.error = err;
         });
     }
   }

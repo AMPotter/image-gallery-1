@@ -1,3 +1,6 @@
+require('dotenv').config();
+const PORT = process.env.PORT;
+const DATABASE_URL = process.env.DATABASE_URL;
 const express = require('express');
 const app = express();
 
@@ -6,11 +9,11 @@ const morgan = require('morgan');
 app.use(morgan('dev'));
 app.use(cors());
 app.use(express.json());
+app.use(express.static('public'));
 
 const pg = require('pg');
 const Client = pg.Client;
-const databaseUrl = 'postgres://localhost:5432/sickpics';
-const client = new Client(databaseUrl);
+const client = new Client(DATABASE_URL);
 client.connect();
 
 app.get('/api/images', (req, res, next) => {
@@ -161,6 +164,17 @@ app.post('/api/albums', (req, res, next) => {
     .then(result => {
       res.send(result.rows[0]);
     })
+    .catch(next);
+});
+
+app.delete('/api/albums/:id', (req, res, next) => {
+  client.query(`
+    delete from albums where id=$1;
+  `,
+  [req.params.id]
+  ).then(() => {
+    res.send({ removed: true });
+  })
     .catch(next);
 });
 

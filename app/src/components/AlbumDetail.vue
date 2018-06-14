@@ -33,6 +33,9 @@ export default {
     getAlbum(this.$route.params.id)
       .then(album => {
         this.album = album;
+      })
+      .catch(err => {
+        this.error = err;
       });
   },
   methods: {
@@ -42,6 +45,9 @@ export default {
         .then(saved => {
           this.album.images.push(saved);
           this.$router.push(`/albums/${this.albumId}`);
+        })
+        .catch(err => {
+          this.error = err;
         });
     }
   }

@@ -56,6 +56,7 @@ export default {
   },
   data() {
     return {
+      error: null,
       edit: this.image ? Object.assign({}, this.image) : initImage()
     };
   },
